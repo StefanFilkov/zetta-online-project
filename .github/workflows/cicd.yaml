@@ -52,7 +52,7 @@ jobs:
         id: make-matrix
         shell: bash
         run: |
-          echo "${{ steps.changes.outputs }}""
+          echo '${{ toJSON(steps.changes.outputs) }}'
           set -e
 
           # If any "global" files changed, rebuild everything.
