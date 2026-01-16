@@ -50,7 +50,7 @@ jobs:
 
       - name: Build dynamic matrix
         id: make-matrix
-        shell: bashl
+        shell: bash
         run: |
           echo "${{ steps.changes.outputs }}""
           set -e
