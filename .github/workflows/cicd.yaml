@@ -47,5 +47,6 @@ jobs:
             order-service:
               - added|deleted|modified: 'order-service/**'
       - name: Cat output
+        shell: bashl
         run: |
           cat ${{ steps.changes.outputs }}
