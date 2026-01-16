@@ -98,7 +98,7 @@ jobs:
       IMAGE_BASE: ghcr.io/stefanfilkov
       PLATFORMS: linux/amd64,linux/arm64
       DOCKERFILE: ./${{ matrix.module }}/Dockerfile
-      CONTEXT: .
+      CONTEXT: ./${{ matrix.module }}
 
     steps:
       - name: Checkout
