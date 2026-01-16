@@ -1,0 +1,5 @@
+CREATE DATABASE inventory_db;
+CREATE DATABASE order_db;
+
+GRANT ALL PRIVILEGES ON DATABASE inventory_db TO postgres;
+GRANT ALL PRIVILEGES ON DATABASE order_db TO postgres;

@@ -1,0 +1,4 @@
+.vscode/
+target/
+.postgres-data
+**.log
