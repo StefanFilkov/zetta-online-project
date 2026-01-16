@@ -84,3 +84,65 @@ jobs:
           done
           json+=']}'
           echo "matrix=$json" >> "$GITHUB_OUTPUT"
+
+  ship-containers:
+    name: Build and ship
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.matrix_empty != 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+    
+    env:
+      IMAGE_BASE: ghcr.io/stefanfilkov
+      PLATFORMS: linux/amd64,linux/arm64
+      DOCKERFILE: ./${{ matrix.module }}/Dockerfile
+      CONTEXT: .
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push
+        shell: bash
+        run: |
+          IMAGE_ID="${{ env.IMAGE_BASE }}/${{ matrix.image_name }}"
+          TAGS="latest,${{ github.sha }}"
+          
+          IFS=',' read -ra TAG_LIST <<< "$TAGS"
+          TAG_ARGS=()
+          for tag in "${TAG_LIST[@]}"; do
+            TAG_ARGS+=(--tag "${IMAGE_ID}:${tag}")
+          done
+
+          # --- 2. Prepare Build Args ---
+          # Mapping the matrix values to --build-arg
+          BA_ARGS=(
+            --build-arg "COMMIT_SHA=${{ github.sha }}"
+            --build-arg "MODULE=${{ matrix.module }}"
+          )
+
+          # --- 3. Execute Docker Buildx ---
+          echo "Building $IMAGE_ID with tags: ${TAG_LIST[*]}"
+          
+          docker buildx build \
+            --platform "${{ env.PLATFORMS }}" \
+            -f "${{ env.DOCKERFILE }}" \
+            "${BA_ARGS[@]}" \
+            "${TAG_ARGS[@]}" \
+            --push \
+            "${{ env.CONTEXT }}"
