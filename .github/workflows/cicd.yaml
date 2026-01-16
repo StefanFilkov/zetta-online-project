@@ -1,0 +1,49 @@
+name: Ship GHCR
+
+on:
+  push:
+    branches: [ main,cicd ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.make-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show changed files
+        run: |
+            echo "HEAD: ${{ github.sha }}"
+            echo "BEFORE: ${{ github.event.before }}"
+            git --no-pager log --oneline -n 3
+            echo "---- changed files in this push range ----"
+            git --no-pager diff --name-only ${{ github.event.before }} ${{ github.sha }} || true
+            echo "------------------------------------------"
+
+      - name: Filter changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.before }}
+          ref:  ${{ github.sha }}
+          filters: |
+            # rebuild all 3 if these change:
+            global:
+              - 'pom.xml'
+              - 'docker/**'
+              
+            frontend:
+              - added|deleted|modified: 'frontend/**'
+            inventory-service:
+              - added|deleted|modified: 'inventory-service/**'
+            order-service:
+              - added|deleted|modified: 'order-service/**'
+
