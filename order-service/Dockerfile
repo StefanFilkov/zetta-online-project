@@ -10,7 +10,7 @@ COPY order-service/src ./order-service/src
 WORKDIR /build/order-service
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
