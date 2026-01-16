@@ -14,7 +14,7 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
 COPY --from=build /build/order-service/target/*.jar app.jar
