@@ -49,4 +49,4 @@ jobs:
       - name: Cat output
         shell: bashl
         run: |
-          cat ${{ steps.changes.outputs }}
+          echo "${{ steps.changes.outputs }}"
