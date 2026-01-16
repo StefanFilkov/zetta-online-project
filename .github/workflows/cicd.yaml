@@ -67,7 +67,7 @@ jobs:
             [[ "${{ steps.changes.outputs.frontend }}"       == "true" ]] && modules+=(frontend)
             [[ "${{ steps.changes.outputs.inventory-service }}" == "true" ]] && modules+=(inventory-service)
             [[ "${{ steps.changes.outputs.order-service }}"      == "true" ]] && modules+=(order-service)
-            
+                
           fi
 
           # Build the matrix JSON that GH Actions expects: { "include": [ {module, image_name}, ... ] }
