@@ -46,7 +46,41 @@ jobs:
               - added|deleted|modified: 'inventory-service/**'
             order-service:
               - added|deleted|modified: 'order-service/**'
-      - name: Cat output
-        shell: bash
+
+
+      - name: Build dynamic matrix
+        id: make-matrix
+        shell: bashl
         run: |
-          echo "${{ steps.changes.outputs }}"
+          echo "${{ steps.changes.outputs }}""
+          set -e
+
+          # If any "global" files changed, rebuild everything.
+          if [[ "${{ steps.changes.outputs.global }}" == "true" ]]; then
+            modules=(
+              frontend
+              inventory-service
+              order-service
+            )
+          else
+            modules=()
+            [[ "${{ steps.changes.outputs.frontend }}"       == "true" ]] && modules+=(frontend)
+            [[ "${{ steps.changes.outputs.inventory-service }}" == "true" ]] && modules+=(inventory-service)
+            [[ "${{ steps.changes.outputs.order-service }}"      == "true" ]] && modules+=(order-service)
+
+          fi
+
+          # Build the matrix JSON that GH Actions expects: { "include": [ {module, image_name}, ... ] }
+          if (( ${#modules[@]} == 0 )); then
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          json='{"include":['
+          sep=""
+          for m in "${modules[@]}"; do
+            json+="${sep}{\"module\":\"$m\",\"image_name\":\"$m\"}"
+            sep=","
+          done
+          json+=']}'
+          echo "matrix=$json" >> "$GITHUB_OUTPUT"
