@@ -46,4 +46,6 @@ jobs:
               - added|deleted|modified: 'inventory-service/**'
             order-service:
               - added|deleted|modified: 'order-service/**'
-
+      - name: Cat output
+        run: |
+          cat ${{ steps.changes.outputs }}
