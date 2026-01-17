@@ -76,6 +76,11 @@ jobs:
             exit 0
           fi
 
+          if (( ${#modules[@]} == 0 )); then
+            echo 'matrix={"include":[{"module":"NONE","image_name":"NONE"}]}' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           json='{"include":['
           sep=""
           for m in "${modules[@]}"; do
