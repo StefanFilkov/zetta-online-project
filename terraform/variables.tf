@@ -9,6 +9,19 @@ variable "region" {
   default     = "europe-west3"
 }
 
+# Variables for GitHub repository configuration
+variable "github_repository_owner" {
+  description = "GitHub repository owner (organization or username)"
+  type        = string
+  default     = "StefanFilkov"
+}
+
+variable "github_repository_name" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "zetta-online-project" 
+}
+
 variable "cluster_name" {
   description = "GKE cluster name"
   type        = string

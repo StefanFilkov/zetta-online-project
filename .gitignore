@@ -2,3 +2,7 @@
 target/
 .postgres-data
 **.log
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
