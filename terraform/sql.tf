@@ -79,3 +79,15 @@ resource "google_sql_user" "appuser_order" {
   instance = google_sql_database_instance.postgres.name
   password = local.effective_sql_password
 }
+
+resource "google_service_account_iam_member" "inventory_workload_identity" {
+  service_account_id = google_service_account.cloudsql_client.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[apps/inventory-sa]"
+}
+
+resource "google_service_account_iam_member" "order_workload_identity" {
+  service_account_id = google_service_account.cloudsql_client.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[apps/order-sa]"
+}

@@ -27,11 +27,11 @@ resource "google_project_iam_member" "gke_nodes_resourcemetadata" {
   member  = "serviceAccount:${google_service_account.gke_nodes.email}"
 }
 
-# resource "google_project_iam_member" "gke_nodes_artifactregistry" {
-#   project = var.project_id
-#   role    = "roles/artifactregistry.reader"
-#   member  = "serviceAccount:${google_service_account.gke_nodes.email}"
-# }
+resource "google_project_iam_member" "gke_nodes_artifactregistry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_nodes.email}"
+}
 
 resource "google_service_account" "cloudsql_client" {
   account_id   = "${var.cluster_name}-cloudsql"
@@ -48,6 +48,10 @@ resource "google_container_cluster" "cluster" {
   name     = var.cluster_name
   location = var.region
 
+    gateway_api_config {
+    channel = "CHANNEL_STANDARD"
+  }
+  
   network    = google_compute_network.vpc.id
   subnetwork = google_compute_subnetwork.subnet.id
 
@@ -110,6 +114,13 @@ resource "google_container_cluster" "cluster" {
     google_compute_router_nat.nat
   ]
 }
+
+resource "google_project_service" "certificatemanager" {
+  project            = var.project_id
+  service            = "certificatemanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 
 resource "google_container_node_pool" "primary" {
   name       = "apps"
