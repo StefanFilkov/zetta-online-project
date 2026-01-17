@@ -1,13 +1,13 @@
-name: Ship GHCR
+name: Ship GCP
 
 on:
   push:
-    branches: [ main,cicd ]
+    branches: [ main,ci-to-gcp ]
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write  # Required for Workload Identity Federation
 
 jobs:
   detect-changes:
@@ -100,7 +100,7 @@ jobs:
       matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
     
     env:
-      IMAGE_BASE: ghcr.io/stefanfilkov
+      IMAGE_BASE: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker
       PLATFORMS: linux/amd64,linux/arm64
       DOCKERFILE: ./${{ matrix.module }}/Dockerfile
       # CONTEXT: ./${{ matrix.module }}
@@ -116,12 +116,21 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Option 1 (Recommended): Workload Identity Federation
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+          # Option 2: Service Account Key (less secure, easier setup)
+          # credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker europe-west3-docker.pkg.dev --quiet
 
       - name: Build & Push
         shell: bash
