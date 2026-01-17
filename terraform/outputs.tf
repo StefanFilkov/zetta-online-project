@@ -64,3 +64,14 @@ output "workload_identity_cloudsql_gsa" {
 output "get_credentials_command" {
   value = "gcloud container clusters get-credentials ${google_container_cluster.cluster.name} --region ${var.region} --project ${var.project_id}"
 }
+
+output "github_workload_identity_provider" {
+  description = "Workload Identity Provider ID for GitHub Actions (use this in GCP_WORKLOAD_IDENTITY_PROVIDER secret)"
+  value       = google_iam_workload_identity_pool_provider.github_provider.name
+}
+
+output "github_service_account_email" {
+  description = "Service account email for GitHub Actions (use this in GCP_SERVICE_ACCOUNT secret)"
+  value       = google_service_account.github_actions.email
+}
+

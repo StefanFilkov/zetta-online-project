@@ -8,7 +8,9 @@ locals {
     "cloudresourcemanager.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
-    "artifactregistry.googleapis.com"
+    "artifactregistry.googleapis.com",
+    "iamcredentials.googleapis.com",  # Required for Workload Identity Federation
+    "sts.googleapis.com"               # Required for Workload Identity Federation
   ]
 }
 
