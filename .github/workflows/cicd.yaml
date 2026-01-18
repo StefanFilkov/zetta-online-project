@@ -2,7 +2,7 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, cleaning ]
   workflow_dispatch:
 
 permissions:
@@ -31,11 +31,11 @@ jobs:
               - 'pom.xml'
               - 'docker/**'
             frontend:
-              - added|deleted|modified: 'frontend/**'
+              - added|deleted|modified: 'apps/frontend/**'
             inventory-service:
-              - added|deleted|modified: 'inventory-service/**'
+              - added|deleted|modified: 'apps/inventory-service/**'
             order-service:
-              - added|deleted|modified: 'order-service/**'
+              - added|deleted|modified: 'apps/order-service/**'
 
       - name: Build dynamic matrix
         id: make-matrix
@@ -52,13 +52,13 @@ jobs:
           fi
 
           if (( ${#modules[@]} == 0 )); then
-            echo "No changes detected."
-            echo 'run_build=false' >> "$GITHUB_OUTPUT"       # <--- 2. Signal NOT to run
-            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT" # Output empty matrix for safety
+              echo "No changes detected."
+              echo 'run_build=false' >> "$GITHUB_OUTPUT"      
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT" 
             exit 0
           fi
 
-          echo 'run_build=true' >> "$GITHUB_OUTPUT" # <--- 2. Signal TO run
+          echo 'run_build=true' >> "$GITHUB_OUTPUT" 
           
           json='{"include":['
           sep=""
@@ -72,7 +72,7 @@ jobs:
   ship-containers:
     name: Build and ship
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.run_build == 'true' }} # <--- 3. Check the explicit flag
+    if: ${{ needs.detect-changes.outputs.run_build == 'true' }} 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -81,7 +81,7 @@ jobs:
     env:
       IMAGE_BASE: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker
       PLATFORMS: linux/amd64,linux/arm64
-      DOCKERFILE: ./${{ matrix.module }}/Dockerfile
+      DOCKERFILE: ./apps/${{ matrix.module }}/Dockerfile
       CONTEXT: .
 
     steps:
@@ -136,7 +136,7 @@ jobs:
   update-manifests:
     name: Update K8s Manifests
     needs: [detect-changes, ship-containers]
-    if: ${{ needs.detect-changes.outputs.run_build == 'true' }} # <--- 4. Check the explicit flag
+    if: ${{ needs.detect-changes.outputs.run_build == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
