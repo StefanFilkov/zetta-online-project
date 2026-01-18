@@ -146,14 +146,6 @@ jobs:
             --build-arg "MODULE=${{ matrix.module }}"
           )
 
-          # Add frontend-specific build args
-          if [[ "${{ matrix.module }}" == "frontend" ]]; then
-            BA_ARGS+=(
-              --build-arg "REACT_APP_INVENTORY_SERVICE_URL=https://inventory.domashno.party/api"
-              --build-arg "REACT_APP_ORDER_SERVICE_URL=https://order.domashno.party/api"
-            )
-          fi
-
           echo "Building $IMAGE_ID with tags: ${TAG_LIST[*]}"
           
           docker buildx build \

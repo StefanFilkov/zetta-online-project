@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-const INVENTORY_SERVICE_URL = process.env.REACT_APP_INVENTORY_SERVICE_URL || 'http://localhost:8081/api';
-const ORDER_SERVICE_URL = process.env.REACT_APP_ORDER_SERVICE_URL || 'http://localhost:8082/api';
+// Use relative paths - ingress will route to appropriate services
+const API_BASE_URL = '/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -15,7 +16,7 @@ const apiClient = axios.create({
 export const inventoryService = {
   getAllProducts: async () => {
     try {
-      const response = await apiClient.get(`${INVENTORY_SERVICE_URL}/products`);
+      const response = await apiClient.get('/products');
       return response.data;
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -25,7 +26,7 @@ export const inventoryService = {
 
   getProductById: async (id) => {
     try {
-      const response = await apiClient.get(`${INVENTORY_SERVICE_URL}/products/${id}`);
+      const response = await apiClient.get(`/products/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching product ${id}:`, error);
@@ -38,7 +39,7 @@ export const inventoryService = {
 export const orderService = {
   createOrder: async (orderData) => {
     try {
-      const response = await apiClient.post(`${ORDER_SERVICE_URL}/orders`, orderData);
+      const response = await apiClient.post('/orders', orderData);
       return response.data;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -48,7 +49,7 @@ export const orderService = {
 
   getAllOrders: async () => {
     try {
-      const response = await apiClient.get(`${ORDER_SERVICE_URL}/orders`);
+      const response = await apiClient.get('/orders');
       return response.data;
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -58,7 +59,7 @@ export const orderService = {
 
   getOrderById: async (id) => {
     try {
-      const response = await apiClient.get(`${ORDER_SERVICE_URL}/orders/${id}`);
+      const response = await apiClient.get(`/orders/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching order ${id}:`, error);
