@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const INVENTORY_SERVICE_URL = 'http://localhost:8081/api';
-const ORDER_SERVICE_URL = 'http://localhost:8082/api';
+const INVENTORY_SERVICE_URL = process.env.REACT_APP_INVENTORY_SERVICE_URL || 'http://localhost:8081/api';
+const ORDER_SERVICE_URL = process.env.REACT_APP_ORDER_SERVICE_URL || 'http://localhost:8082/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
