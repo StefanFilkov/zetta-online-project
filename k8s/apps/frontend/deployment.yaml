@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/frontend:2692496963874976aa53c98c9d9dc3c9c438605c
+          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/frontend:ee6bf3cfde7ceb425c5ce1351aee6118f0576b3a
           imagePullPolicy: Always
           ports:
             - containerPort: 80
