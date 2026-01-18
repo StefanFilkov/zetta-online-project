@@ -95,19 +95,19 @@ variable "node_disk_size_gb" {
 variable "node_count" {
   description = "Initial number of nodes in the node pool"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "node_pool_min" {
   description = "Minimum nodes for autoscaling"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "node_pool_max" {
   description = "Maximum nodes for autoscaling"
   type        = number
-  default     = 6
+  default     = 3
 }
 
 variable "sql_instance_name" {
