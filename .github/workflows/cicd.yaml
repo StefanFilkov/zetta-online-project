@@ -2,7 +2,7 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main, pipe-warning ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
