@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: zetta-online-project
+  namespace: argocd
+spec:
+  description: Project for Zetta Online microservices
+  
+  sourceRepos:
+  - "https://github.com/StefanFilkov/zetta-online-project"
+
+  destinations:
+  - namespace: apps
+    server: https://kubernetes.default.svc
+  
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: zetta-online-project
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - namespace: apps
+            path: k8s/apps/frontend
+            releaseName: frontend
+            repoURL: https://github.com/StefanFilkov/zetta-online-project
+            targetRevision: main
+            secretsPath: k8s/sealed-secrets/frontend 
+            secretsRepoURL: https://github.com/StefanFilkov/zetta-online-project
+            secretsTargetRevision: main
+          - namespace: apps
+            path: k8s/apps/inventory_service
+            releaseName: inventory-service
+            repoURL: https://github.com/StefanFilkov/zetta-online-project
+            targetRevision: main
+            secretsPath: k8s/sealed-secrets/inventory
+            secretsRepoURL: https://github.com/StefanFilkov/zetta-online-project
+            secretsTargetRevision: main
+          - namespace: apps
+            path: k8s/apps/order_service
+            releaseName: order-service
+            repoURL: https://github.com/StefanFilkov/zetta-online-project
+            targetRevision: main
+            secretsPath: k8s/sealed-secrets/order
+            secretsRepoURL: https://github.com/StefanFilkov/zetta-online-project
+            secretsTargetRevision: main
+  template:
+    metadata:
+      name: '{{releaseName}}'
+    spec:
+      project: zetta-online-project
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PruneLast=true
+      sources:
+        - path: '{{path}}'
+          repoURL: '{{repoURL}}'
+          targetRevision: '{{targetRevision}}'
+        - repoURL: '{{secretsRepoURL}}'
+          targetRevision: '{{secretsTargetRevision}}'
+          path: '{{secretsPath}}'
+      destination:
+        namespace: '{{namespace}}'
+        server: "https://kubernetes.default.svc"
