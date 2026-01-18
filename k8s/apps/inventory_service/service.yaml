@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: inventory
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: "inventory"
+  selector:
+    app.kubernetes.io/name: inventory
