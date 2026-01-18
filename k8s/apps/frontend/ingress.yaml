@@ -1,0 +1,44 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: store-ingress
+  namespace: apps
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "ha-gke-ingress-ip"
+    networking.gke.io/cert-map: "projects/907024360443/locations/global/certificateMaps/domashno-party-map"
+spec:
+  defaultBackend:
+    service:
+      name: frontend
+      port:
+        number: 80
+  tls:
+  - hosts:
+    - store.domashno.party
+    secretName: "placeholder-secret"
+  rules:
+  - host: store.domashno.party
+    http:
+      paths:
+      - path: /api/products
+        pathType: Prefix
+        backend:
+          service:
+            name: inventory
+            port:
+              number: 8080
+      - path: /api/orders
+        pathType: Prefix
+        backend:
+          service:
+            name: order
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
