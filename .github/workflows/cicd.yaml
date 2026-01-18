@@ -2,7 +2,7 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main,ci-to-gcp ]
+    branches: [ main,fe-to-k8s ]
   workflow_dispatch:
 
 permissions:
@@ -141,14 +141,11 @@ jobs:
             TAG_ARGS+=(--tag "${IMAGE_ID}:${tag}")
           done
 
-          # --- 2. Prepare Build Args ---
-          # Mapping the matrix values to --build-arg
           BA_ARGS=(
             --build-arg "COMMIT_SHA=${{ github.sha }}"
             --build-arg "MODULE=${{ matrix.module }}"
           )
 
-          # --- 3. Execute Docker Buildx ---
           echo "Building $IMAGE_ID with tags: ${TAG_LIST[*]}"
           
           docker buildx build \
