@@ -2,31 +2,23 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main,cd ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write  # Required for Workload Identity Federation
+  id-token: write
 
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.make-matrix.outputs.matrix }}
+      run_build: ${{ steps.make-matrix.outputs.run_build }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Show changed files
-        run: |
-            echo "HEAD: ${{ github.sha }}"
-            echo "BEFORE: ${{ github.event.before }}"
-            git --no-pager log --oneline -n 3
-            echo "---- changed files in this push range ----"
-            git --no-pager diff --name-only ${{ github.event.before }} ${{ github.sha }} || true
-            echo "------------------------------------------"
 
       - name: Filter changed paths
         id: changes
@@ -35,11 +27,9 @@ jobs:
           base: ${{ github.event.before }}
           ref:  ${{ github.sha }}
           filters: |
-            # rebuild all 3 if these change:
             global:
               - 'pom.xml'
               - 'docker/**'
-              
             frontend:
               - added|deleted|modified: 'frontend/**'
             inventory-service:
@@ -47,40 +37,29 @@ jobs:
             order-service:
               - added|deleted|modified: 'order-service/**'
 
-
       - name: Build dynamic matrix
         id: make-matrix
         shell: bash
         run: |
-          echo '${{ toJSON(steps.changes.outputs) }}'
-          set -e
-
           # If any "global" files changed, rebuild everything.
           if [[ "${{ steps.changes.outputs.global }}" == "true" ]]; then
-            modules=(
-              frontend
-              inventory-service
-              order-service
-            )
+            modules=(frontend inventory-service order-service)
           else
             modules=()
-            [[ "${{ steps.changes.outputs.frontend }}"       == "true" ]] && modules+=(frontend)
+            [[ "${{ steps.changes.outputs.frontend }}" == "true" ]] && modules+=(frontend)
             [[ "${{ steps.changes.outputs.inventory-service }}" == "true" ]] && modules+=(inventory-service)
-            [[ "${{ steps.changes.outputs.order-service }}"      == "true" ]] && modules+=(order-service)
-                
-          fi
-
-          # Build the matrix JSON that GH Actions expects: { "include": [ {module, image_name}, ... ] }
-          if (( ${#modules[@]} == 0 )); then
-            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
-            exit 0
+            [[ "${{ steps.changes.outputs.order-service }}" == "true" ]] && modules+=(order-service)
           fi
 
           if (( ${#modules[@]} == 0 )); then
-            echo 'matrix={"include":[{"module":"NONE","image_name":"NONE"}]}' >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+            echo 'run_build=false' >> "$GITHUB_OUTPUT"       # <--- 2. Signal NOT to run
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT" # Output empty matrix for safety
             exit 0
           fi
 
+          echo 'run_build=true' >> "$GITHUB_OUTPUT" # <--- 2. Signal TO run
+          
           json='{"include":['
           sep=""
           for m in "${modules[@]}"; do
@@ -93,7 +72,7 @@ jobs:
   ship-containers:
     name: Build and ship
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.matrix_empty != 'true' }}
+    if: ${{ needs.detect-changes.outputs.run_build == 'true' }} # <--- 3. Check the explicit flag
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -103,7 +82,6 @@ jobs:
       IMAGE_BASE: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker
       PLATFORMS: linux/amd64,linux/arm64
       DOCKERFILE: ./${{ matrix.module }}/Dockerfile
-      # CONTEXT: ./${{ matrix.module }}
       CONTEXT: .
 
     steps:
@@ -121,7 +99,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
 
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
@@ -159,7 +136,7 @@ jobs:
   update-manifests:
     name: Update K8s Manifests
     needs: [detect-changes, ship-containers]
-    if: ${{ needs.detect-changes.outputs.matrix != '{"include":[]}' && needs.detect-changes.outputs.matrix != '{"include":[{"module":"NONE","image_name":"NONE"}]}' }}
+    if: ${{ needs.detect-changes.outputs.run_build == 'true' }} # <--- 4. Check the explicit flag
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -207,7 +184,6 @@ jobs:
             
             echo "Found file: $target_file"
             
-
             NEW_IMAGE="${{ env.IMAGE_BASE }}/${image_name}:${{ github.sha }}"
             
             sed -i "s|image: .*${image_name}:.*|image: ${NEW_IMAGE}|g" "$target_file"
