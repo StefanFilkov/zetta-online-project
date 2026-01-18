@@ -4,10 +4,10 @@ WORKDIR /build
 
 COPY pom.xml ./pom.xml
 
-COPY inventory-service/pom.xml ./inventory-service/pom.xml
-COPY inventory-service/src ./inventory-service/src
+COPY apps/order-service/pom.xml ./order-service/pom.xml
+COPY apps/order-service/src ./order-service/src
 
-WORKDIR /build/inventory-service
+WORKDIR /build/order-service
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
@@ -17,7 +17,7 @@ WORKDIR /app
 RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
-COPY --from=build /build/inventory-service/target/*.jar app.jar
+COPY --from=build /build/order-service/target/*.jar app.jar
 
 EXPOSE 8080
 
