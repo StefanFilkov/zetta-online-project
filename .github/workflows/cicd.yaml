@@ -182,37 +182,41 @@ jobs:
         shell: bash
         run: |
           echo '${{ needs.detect-changes.outputs.matrix }}' > matrix.json
-
+          
           jq -c '.include[]' matrix.json | while read i; do
             module=$(echo $i | jq -r '.module')
             image_name=$(echo $i | jq -r '.image_name')
             
-            echo "Processing update for: $module"
+            echo "Looking for deployment file for module: $module"
             
-            short_name=${module%-service} 
-            deployment_file="k8s/${short_name}-deployment.yaml"
+            target_file="k8s/apps/$module/deployment.yaml"
             
-            if [[ ! -f "$deployment_file" ]]; then
-              echo "⚠️  Warning: Could not find $deployment_file. Trying exact match..."
-              deployment_file="k8s/${module}-deployment.yaml"
+            if [[ ! -f "$target_file" ]]; then
+              underscore_module="${module//-/_}"
+              alt_file="k8s/apps/$underscore_module/deployment.yaml"
+              
+              if [[ -f "$alt_file" ]]; then
+                target_file="$alt_file"
+              else
+                echo "Error: Could not find deployment.yaml for $module in k8s/apps/"
+                echo "   Checked: k8s/apps/$module/deployment.yaml"
+                echo "   Checked: k8s/apps/$underscore_module/deployment.yaml"
+                exit 1 
+              fi
             fi
             
-            if [[ -f "$deployment_file" ]]; then
-              echo "✅ Found $deployment_file. Updating image..."
+            echo "Found file: $target_file"
             
-              NEW_IMAGE="${{ env.IMAGE_BASE }}/${image_name}:${{ github.sha }}"
-              
-              sed -i "s|image: .*${image_name}:.*|image: ${NEW_IMAGE}|g" "$deployment_file"
-              
-              git add "$deployment_file"
-            else
-              echo "Error: Could not find a deployment file for $module inside k8s/ folder."
-            fi
+
+            NEW_IMAGE="${{ env.IMAGE_BASE }}/${image_name}:${{ github.sha }}"
+            
+            sed -i "s|image: .*${image_name}:.*|image: ${NEW_IMAGE}|g" "$target_file"
+            
+            git add "$target_file"
           done
 
       - name: Commit and Push
         run: |
-          # Only commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
