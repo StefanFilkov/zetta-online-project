@@ -26,7 +26,7 @@ spec:
       serviceAccountName: order-sa
       containers:
         - name: order
-          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/order-service:3ab8901e1f57af9018478835cbb361b6cf202f18
+          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/order-service:d23596f6d419ce0b46206bfd5f12466195dbc536
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
