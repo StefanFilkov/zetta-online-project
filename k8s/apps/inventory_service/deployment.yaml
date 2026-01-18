@@ -26,7 +26,7 @@ spec:
       serviceAccountName: inventory-sa
       containers:
         - name: inventory
-          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/inventory-service:c03d3899e76e6d28b36dbaf3830038faa6df993d
+          image: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker/inventory-service:2692496963874976aa53c98c9d9dc3c9c438605c
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
