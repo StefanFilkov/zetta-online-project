@@ -1,0 +1,5 @@
+functions-framework==3.*
+google-cloud-compute==1.*
+pg8000==1.30.*
+cloud-sql-python-connector==1.4.*
+sqlalchemy==2.0.*
