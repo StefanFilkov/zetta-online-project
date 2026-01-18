@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - .postgres-data:/var/lib/postgresql/data
-      - ./local-setup/init-local-db.sql:/docker-entrypoint-initdb.d/init-databases.sql
+      - ./apps/local-setup/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
     networks:
       - shop-network
     healthcheck:
@@ -23,7 +23,7 @@ services:
   inventory-service:
     build:
       context: .
-      dockerfile: ./inventory-service/Dockerfile
+      dockerfile: ./apps/inventory-service/Dockerfile
     container_name: inventory-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
@@ -42,7 +42,7 @@ services:
   order-service:
     build:
       context: .
-      dockerfile: ./order-service/Dockerfile
+      dockerfile: ./apps/order-service/Dockerfile
     container_name: order-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
@@ -62,7 +62,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ./frontend/Dockerfile
+      dockerfile: ./apps/frontend/Dockerfile
     container_name: shop-frontend
     ports:
       - "3000:80"
