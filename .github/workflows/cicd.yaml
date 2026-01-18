@@ -2,7 +2,7 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main,fe-to-k8s ]
+    branches: [ main,cd ]
   workflow_dispatch:
 
 permissions:
@@ -155,3 +155,67 @@ jobs:
             "${TAG_ARGS[@]}" \
             --push \
             "${{ env.CONTEXT }}"
+
+  update-manifests:
+    name: Update K8s Manifests
+    needs: [detect-changes, ship-containers]
+    if: ${{ needs.detect-changes.outputs.matrix != '{"include":[]}' && needs.detect-changes.outputs.matrix != '{"include":[{"module":"NONE","image_name":"NONE"}]}' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    env:
+      IMAGE_BASE: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update YAMLs
+        shell: bash
+        run: |
+          echo '${{ needs.detect-changes.outputs.matrix }}' > matrix.json
+
+          jq -c '.include[]' matrix.json | while read i; do
+            module=$(echo $i | jq -r '.module')
+            image_name=$(echo $i | jq -r '.image_name')
+            
+            echo "Processing update for: $module"
+            
+            short_name=${module%-service} 
+            deployment_file="k8s/${short_name}-deployment.yaml"
+            
+            if [[ ! -f "$deployment_file" ]]; then
+              echo "⚠️  Warning: Could not find $deployment_file. Trying exact match..."
+              deployment_file="k8s/${module}-deployment.yaml"
+            fi
+            
+            if [[ -f "$deployment_file" ]]; then
+              echo "✅ Found $deployment_file. Updating image..."
+            
+              NEW_IMAGE="${{ env.IMAGE_BASE }}/${image_name}:${{ github.sha }}"
+              
+              sed -i "s|image: .*${image_name}:.*|image: ${NEW_IMAGE}|g" "$deployment_file"
+              
+              git add "$deployment_file"
+            else
+              echo "Error: Could not find a deployment file for $module inside k8s/ folder."
+            fi
+          done
+
+      - name: Commit and Push
+        run: |
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "GitOps: Update image tags to ${{ github.sha }}"
+            git push
+          fi
