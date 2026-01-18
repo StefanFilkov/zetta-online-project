@@ -6,3 +6,4 @@ target/
 *.tfstate
 *.tfstate.*
 crash.log
+.env
