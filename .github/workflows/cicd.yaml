@@ -2,7 +2,7 @@ name: Ship GCP
 
 on:
   push:
-    branches: [ main,fe-to-k8s ]
+    branches: [ main,cd ]
   workflow_dispatch:
 
 permissions:
@@ -155,3 +155,71 @@ jobs:
             "${TAG_ARGS[@]}" \
             --push \
             "${{ env.CONTEXT }}"
+
+  update-manifests:
+    name: Update K8s Manifests
+    needs: [detect-changes, ship-containers]
+    if: ${{ needs.detect-changes.outputs.matrix != '{"include":[]}' && needs.detect-changes.outputs.matrix != '{"include":[{"module":"NONE","image_name":"NONE"}]}' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    env:
+      IMAGE_BASE: europe-west3-docker.pkg.dev/zetta-online-project/ha-gke-docker
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update YAMLs
+        shell: bash
+        run: |
+          echo '${{ needs.detect-changes.outputs.matrix }}' > matrix.json
+          
+          jq -c '.include[]' matrix.json | while read i; do
+            module=$(echo $i | jq -r '.module')
+            image_name=$(echo $i | jq -r '.image_name')
+            
+            echo "Looking for deployment file for module: $module"
+            
+            target_file="k8s/apps/$module/deployment.yaml"
+            
+            if [[ ! -f "$target_file" ]]; then
+              underscore_module="${module//-/_}"
+              alt_file="k8s/apps/$underscore_module/deployment.yaml"
+              
+              if [[ -f "$alt_file" ]]; then
+                target_file="$alt_file"
+              else
+                echo "Error: Could not find deployment.yaml for $module in k8s/apps/"
+                echo "   Checked: k8s/apps/$module/deployment.yaml"
+                echo "   Checked: k8s/apps/$underscore_module/deployment.yaml"
+                exit 1 
+              fi
+            fi
+            
+            echo "Found file: $target_file"
+            
+
+            NEW_IMAGE="${{ env.IMAGE_BASE }}/${image_name}:${{ github.sha }}"
+            
+            sed -i "s|image: .*${image_name}:.*|image: ${NEW_IMAGE}|g" "$target_file"
+            
+            git add "$target_file"
+          done
+
+      - name: Commit and Push
+        run: |
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "GitOps: Update image tags to ${{ github.sha }}"
+            git push
+          fi
