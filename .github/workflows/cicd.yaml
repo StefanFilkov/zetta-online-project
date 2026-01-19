@@ -29,7 +29,6 @@ jobs:
           filters: |
             global:
               - 'pom.xml'
-              - 'docker/**'
             frontend:
               - added|deleted|modified: 'apps/frontend/**'
             inventory-service:

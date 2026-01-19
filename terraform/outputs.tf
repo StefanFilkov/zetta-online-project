@@ -28,7 +28,6 @@ output "cloudsql_instance_connection_name" {
 }
 
 output "cloudsql_private_ip" {
-  # Provider versions differ: prefer the explicit attribute when present, else derive from ip_address blocks.
   value = try(
     google_sql_database_instance.postgres.private_ip_address,
     one([for a in google_sql_database_instance.postgres.ip_address : a.ip_address if a.type == "PRIVATE"])

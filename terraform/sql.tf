@@ -39,7 +39,16 @@ resource "google_sql_database_instance" "postgres" {
   settings {
     tier              = var.sql_tier
     availability_type = "REGIONAL" # HA
+    backup_configuration {
+      enabled = true
+      start_time = "02:00"
+      point_in_time_recovery_enabled = true
+      
+      backup_retention_settings {
+        retained_backups = 7  
+      }
 
+    }
 
     ip_configuration {
       ipv4_enabled    = false
