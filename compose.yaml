@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - .postgres-data:/var/lib/postgresql/data
-      - ./apps/local-setup/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+      - ./apps/local-setup/init-local-db.sql:/docker-entrypoint-initdb.d/init-databases.sql
     networks:
       - shop-network
     healthcheck:
@@ -29,6 +29,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_CLOUD_GCP_SQL_ENABLED: false
       SERVER_PORT: 8080
     ports:
       - "8081:8080"
@@ -48,6 +49,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_CLOUD_GCP_SQL_ENABLED: false
       INVENTORY_SERVICE_URL: http://inventory-service:8080
       SERVER_PORT: 8080
     ports:
@@ -64,9 +66,22 @@ services:
       context: .
       dockerfile: ./apps/frontend/Dockerfile
     container_name: shop-frontend
+    depends_on:
+      - inventory-service
+      - order-service
+    networks:
+      - shop-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: shop-nginx
     ports:
       - "3000:80"
+    volumes:
+      - ./apps/local-setup/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - frontend
       - inventory-service
       - order-service
     networks:

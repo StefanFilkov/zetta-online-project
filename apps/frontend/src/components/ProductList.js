@@ -74,6 +74,7 @@ const ProductList = () => {
       <header className="page-header">
         <h1>Shop Dashboard</h1>
         <p>Browse our products and place your orders</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore</p>
       </header>
 
       {products.length === 0 ? (
